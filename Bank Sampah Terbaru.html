@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bank Sampah PKK</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 1em;
+      text-align: center;
+    }
+    main {
+      padding: 2em;
+    }
+    form {
+      background-color: white;
+      padding: 2em;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5em;
+      font-weight: bold;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 0.8em;
+      margin-bottom: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    table {
+      width: 100%;
+      margin-top: 2em;
+      border-collapse: collapse;
+      background-color: white;
+    }
+    th, td {
+      padding: 1em;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .btn-group {
+      text-align: center;
+      margin-top: 1em;
+    }
+    .btn-group button {
+      width: auto;
+      margin: 0 0.5em;
+    }
+    .hapus-btn {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 0.5em 1em;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Data Bank Sampah PKK</h1>
+  </header>
+  <main>
+    <form id="sampahForm">
+      <label for="nama">Nama Ibu</label>
+      <input type="text" id="nama" required />
+
+      <label for="jenis">Jenis Sampah</label>
+      <select id="jenis" required>
+        <option value="Plastik">Plastik</option>
+        <option value="Kertas">Kertas</option>
+        <option value="Logam">Logam</option>
+        <option value="Kaca">Kaca</option>
+        <option value="Lainnya">Lainnya</option>
+      </select>
+
+      <label for="berat">Berat (kg)</label>
+      <input type="number" id="berat" min="0.1" step="0.1" required />
+
+      <div class="btn-group">
+        <button type="submit">Simpan Data</button>
+        <button type="button" onclick="downloadCSV()">Unduh ke Excel</button>
+        <button type="button" onclick="clearTable()">Hapus Semua</button>
+      </div>
+    </form>
+
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>Nama Ibu</th>
+          <th>Jenis Sampah</th>
+          <th>Berat (kg)</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+
+  <script>
+    const form = document.getElementById('sampahForm');
+    const tableBody = document.querySelector('#dataTable tbody');
+
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      const nama = document.getElementById('nama').value;
+      const jenis = document.getElementById('jenis').value;
+      const berat = document.getElementById('berat').value;
+
+      const row = tableBody.insertRow();
+      row.innerHTML = `
+        <td>${nama}</td>
+        <td>${jenis}</td>
+        <td>${berat}</td>
+        <td><button class="hapus-btn" onclick="deleteRow(this)">Hapus</button></td>
+      `;
+
+      saveToLocalStorage();
+      form.reset();
+    });
+
+    function deleteRow(button) {
+      const row = button.closest('tr');
+      row.remove();
+      saveToLocalStorage();
+    }
+
+    function saveToLocalStorage() {
+      const rows = Array.from(tableBody.rows).map(row => {
+        return {
+          nama: row.cells[0].innerText,
+          jenis: row.cells[1].innerText,
+          berat: row.cells[2].innerText
+        };
+      });
+      localStorage.setItem('bankSampahData', JSON.stringify(rows));
+    }
+
+    function loadFromLocalStorage() {
+      const data = JSON.parse(localStorage.getItem('bankSampahData') || '[]');
+      data.forEach(item => {
+        const row = tableBody.insertRow();
+        row.innerHTML = `
+          <td>${item.nama}</td>
+          <td>${item.jenis}</td>
+          <td>${item.berat}</td>
+          <td><button class="hapus-btn" onclick="deleteRow(this)">Hapus</button></td>
+        `;
+      });
+    }
+
+    function downloadCSV() {
+      let csv = 'Nama Ibu,Jenis Sampah,Berat (kg)\n';
+      Array.from(tableBody.rows).forEach(row => {
+        const cols = Array.from(row.cells).slice(0, 3).map(cell => cell.innerText);
+        csv += cols.join(',') + '\n';
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'data_bank_sampah.csv';
+      link.click();
+    }
+
+    function clearTable() {
+      if (confirm('Hapus semua data?')) {
+        tableBody.innerHTML = '';
+        localStorage.removeItem('bankSampahData');
+      }
+    }
+
+    window.onload = loadFromLocalStorage;
+  </script>
+</body>
+</html>
